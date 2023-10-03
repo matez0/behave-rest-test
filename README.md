@@ -10,3 +10,18 @@ to specify and test a REST API.
 
 The presented micro-framework provides [gherkin](https://cucumber.io/docs/gherkin/reference/)
 patterns for a higher level description unlike other available frameworks.
+
+## Self test
+
+Create the virtual environment:
+```
+python -m venv .venv
+. .venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+Run the tests:
+```
+BEHAVE_RESTEST_SELF_TEST=on behave
+```
