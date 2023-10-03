@@ -1,0 +1,3 @@
+[behave]
+paths = behave_restest
+color = yes
