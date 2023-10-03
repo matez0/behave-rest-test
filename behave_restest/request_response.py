@@ -8,3 +8,9 @@ MY_REQUEST_REQUEST = Request(
         "fieldTwo": "value-two",
     },
 )
+
+MY_JSON_RESPONSE_RESPONSE = {
+    "responseField": "response-value",
+}
+
+MY_TEXT_RESPONSE_RESPONSE = "response-text"

@@ -7,6 +7,7 @@ from pathlib import Path
 
 from behave import given, then, when
 from pytest_httpserver import HTTPServer
+import requests
 
 BEHAVE_RESTEST_SELF_TEST = os.environ.get('BEHAVE_RESTEST_SELF_TEST', 'no') in ['on', 'yes', '1']
 
@@ -74,11 +75,27 @@ def get_arg_for_request_body(request):
 
 
 @then(u'service responds {status_code}')
-def step_impl(context, status_code):
+@then(u'service responds {status_code} with {response_descriptor}')
+def step_impl(context, status_code, response_descriptor=None):
+    response = get_response(context, response_descriptor) if response_descriptor else ''
+
     if BEHAVE_RESTEST_SELF_TEST:
-        context.fake_response_handler.respond_with_data('', status=getattr(HTTPStatus, status_code))
+        (
+            context.fake_response_handler.respond_with_data
+            if type(response) is str else
+            context.fake_response_handler.respond_with_json
+        )(response, status=getattr(HTTPStatus, status_code))
 
     actual_response = context.last_response.get(timeout=9)
 
-    assert actual_response.status_code == getattr(HTTPStatus, status_code), \
-        f'actual response: {actual_response.status_code, actual_response.text}'
+    try:
+        actual_response_body = actual_response.json()
+    except requests.exceptions.JSONDecodeError:
+        actual_response_body = actual_response.text
+
+    assert (actual_response.status_code, actual_response_body) == (getattr(HTTPStatus, status_code), response), \
+        f'actual response: {actual_response.status_code, actual_response_body}'
+
+
+def get_response(context, response_descriptor):
+    return get_test_data('RESPONSE', context, response_descriptor)
