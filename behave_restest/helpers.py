@@ -20,6 +20,14 @@ class Request(requests.Request):
         self._endpoint = value
 
     @property
+    def headers(self) -> dict[str, str]:
+        return self._headers() if callable(self._headers) else self._headers
+
+    @headers.setter
+    def headers(self, value: dict[str, str] | Callable[[], dict[str, str]]):
+        self._headers = value
+
+    @property
     def json(self) -> JsonSerializable:
         return self._json() if callable(self._json) else self._json
 

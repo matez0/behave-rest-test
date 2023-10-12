@@ -18,5 +18,6 @@ Feature: Test reusing non-deterministic response value in a subsequent request
 
         Examples:
             | part    |
+            | HEADERS |
             | PATH    |
             | PAYLOAD |

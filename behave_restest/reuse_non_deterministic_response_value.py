@@ -14,6 +14,21 @@ MY_ITEM_ID_RESPONSE = {
 }
 
 
+class ActionRequestHeaders:
+    def __call__(self) -> dict[str, str]:
+        header_value = MY_ITEM_ID_RESPONSE["itemId"].value
+        assert isinstance(header_value, str)
+        return {'my-custom-header': header_value}
+
+
+ACTION_WITH_MY_ITEM_ID_IN_HEADERS_REQUEST = Request(
+    endpoint='/item/action/with/headers/',
+    method='GET',
+    headers=ActionRequestHeaders(),
+    data='',
+)
+
+
 class ActionRequestPath:
     def __call__(self) -> str:
         return f'/item/action/{MY_ITEM_ID_RESPONSE["itemId"].value}/'
