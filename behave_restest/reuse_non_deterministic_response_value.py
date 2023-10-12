@@ -14,6 +14,18 @@ MY_ITEM_ID_RESPONSE = {
 }
 
 
+class ActionRequestPath:
+    def __call__(self) -> str:
+        return f'/item/action/{MY_ITEM_ID_RESPONSE["itemId"].value}/'
+
+
+ACTION_WITH_MY_ITEM_ID_IN_PATH_REQUEST = Request(
+    endpoint=ActionRequestPath(),
+    method='GET',
+    data='',
+)
+
+
 class ActionRequestPayload:
     def __init__(self):
         self.value = {

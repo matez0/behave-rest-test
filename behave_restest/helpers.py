@@ -12,6 +12,14 @@ class Request(requests.Request):
         self.endpoint = endpoint
 
     @property
+    def endpoint(self) -> str:
+        return self._endpoint() if callable(self._endpoint) else self._endpoint
+
+    @endpoint.setter
+    def endpoint(self, value: str | Callable[[], str]):
+        self._endpoint = value
+
+    @property
     def json(self) -> JsonSerializable:
         return self._json() if callable(self._json) else self._json
 
