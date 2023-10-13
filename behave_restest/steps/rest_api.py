@@ -52,6 +52,7 @@ def step_impl(context, request_descriptor):
         context.fake_response_handler = context.fake_service.expect_request(
             request.endpoint,
             method=request.method,
+            headers=request.headers,
             **get_arg_for_request_body(request),
         )
 
