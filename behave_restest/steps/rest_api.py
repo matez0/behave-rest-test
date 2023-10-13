@@ -1,6 +1,7 @@
 from copy import deepcopy
 from http import HTTPStatus
 from importlib import import_module
+import json
 from multiprocessing.pool import ThreadPool
 import os
 from pathlib import Path
@@ -8,6 +9,8 @@ from pathlib import Path
 from behave import given, then, when
 from pytest_httpserver import HTTPServer
 import requests
+
+from helpers import ValueCapture
 
 BEHAVE_RESTEST_SELF_TEST = os.environ.get('BEHAVE_RESTEST_SELF_TEST', 'no') in ['on', 'yes', '1']
 
@@ -49,6 +52,7 @@ def step_impl(context, request_descriptor):
         context.fake_response_handler = context.fake_service.expect_request(
             request.endpoint,
             method=request.method,
+            headers=request.headers,
             **get_arg_for_request_body(request),
         )
 
@@ -80,11 +84,22 @@ def step_impl(context, status_code, response_descriptor=None):
     response = get_response(context, response_descriptor) if response_descriptor else ''
 
     if BEHAVE_RESTEST_SELF_TEST:
-        (
-            context.fake_response_handler.respond_with_data
-            if type(response) is str else
-            context.fake_response_handler.respond_with_json
-        )(response, status=getattr(HTTPStatus, status_code))
+        def replace_value_capture_with_random_value(data):
+            def random_value_for_value_capture(obj):
+                assert isinstance(obj, ValueCapture)
+                return '-'.join(filter(None, [obj._name, str(id(obj))]))
+
+            return json.loads(json.dumps(data, default=random_value_for_value_capture))
+
+        respond, fake_response = (
+            context.fake_response_handler.respond_with_data,
+            response,
+        ) if type(response) is str else (
+            context.fake_response_handler.respond_with_json,
+            replace_value_capture_with_random_value(response),
+        )
+
+        respond(fake_response, status=getattr(HTTPStatus, status_code))
 
     actual_response = context.last_response.get(timeout=9)
 
