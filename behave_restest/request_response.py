@@ -1,7 +1,7 @@
 from helpers import Request
 
 MY_REQUEST_REQUEST = Request(
-    endpoint='/host/path/',
+    endpoint='/my/path/',
     method='POST',
     json={
         "fieldOne": "value-one",
