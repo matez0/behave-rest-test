@@ -38,6 +38,7 @@ class Request(requests.Request):
     def send(self, base_url):
         self.url = base_url + self.endpoint
 
+        # If `self.auth` object would need something from `self`, it can be provided here.
         prepared_request = self.prepare()
 
         with requests.Session() as session:
