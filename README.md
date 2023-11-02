@@ -11,6 +11,12 @@ to specify and test a REST API.
 The presented micro-framework provides [gherkin](https://cucumber.io/docs/gherkin/reference/)
 patterns for a higher level description unlike other available frameworks.
 
+### Features
+
+- [request, response](behave_restest/request_response.feature)
+- [reusing non deterministic response value](behave_restest/reuse_non_deterministic_response_value.feature)
+- [authentication](behave_restest/authentication.feature)
+
 ## How to write REST API tests
 
 The [self test](#self-test) is an example for test implementation following the next steps.
