@@ -16,6 +16,7 @@ patterns for a higher level description unlike other available frameworks.
 - [request, response](behave_restest/request_response.feature)
 - [reusing non deterministic response value](behave_restest/reuse_non_deterministic_response_value.feature)
 - [authentication](behave_restest/authentication.feature)
+- [request by service](behave_restest/request_by_service.feature)
 
 ## How to write REST API tests
 

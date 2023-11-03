@@ -5,6 +5,7 @@ import json
 from multiprocessing.pool import ThreadPool
 import os
 from pathlib import Path
+from socket import gethostname
 
 from behave import given, then, when
 from pytest_httpserver import BlockingHTTPServer
@@ -14,9 +15,14 @@ from helpers import Response, ValueCapture
 
 BEHAVE_RESTEST_SELF_TEST = os.environ.get('BEHAVE_RESTEST_SELF_TEST', 'no') in ['on', 'yes', '1']
 
+# If the service is running in a container, an accessible host can be configured:
+MOCK_SERVER_HOST = os.environ.get('MOCK_SERVER_HOST', gethostname())
+
 
 @given(u'all services are started')
 def step_impl(context):
+    context.mock_server = create_http_server(context, host=MOCK_SERVER_HOST)
+
     if BEHAVE_RESTEST_SELF_TEST:
         context.fake_service = create_http_server(context)
         context.base_url = context.fake_service.url_for('')
@@ -24,8 +30,8 @@ def step_impl(context):
         raise NotImplementedError
 
 
-def create_http_server(context):
-    server = BlockingHTTPServer(host='localhost', timeout=9)
+def create_http_server(context, host='localhost'):
+    server = BlockingHTTPServer(host=host, timeout=9)
     server.start()
     context.add_cleanup(stop_http_server, server)
     return server
@@ -45,10 +51,7 @@ def stop_http_server(server):
 def step_impl(context, request_descriptor):
     request = get_request(context, request_descriptor)
 
-    pool = ThreadPool(1)
-    context.add_cleanup(clean_request_pool, pool)
-
-    context.last_response = pool.apply_async(request.send, (context.base_url,))
+    context.last_response = do_async(context, request.send, context.base_url)
 
     if BEHAVE_RESTEST_SELF_TEST:
         context.fake_response_handler = context.fake_service.assert_request(
@@ -69,9 +72,15 @@ def get_test_data(suffix, context, descriptor):
     )
 
 
-def clean_request_pool(pool):
-    pool.close()
-    pool.terminate()
+def do_async(context, method, *args):
+    def clean(pool):
+        pool.close()
+        pool.terminate()
+
+    pool = ThreadPool(1)
+    context.add_cleanup(clean, pool)
+
+    return pool.apply_async(method, args)
 
 
 def get_arg_for_request_body(request):
@@ -103,18 +112,65 @@ def step_impl(context, status_code, response_descriptor=None):
 
     actual_response = context.last_response.get(timeout=9)
 
-    assert all(header in actual_response.headers.items() for header in response.headers.items())
+    assert_responses_match(actual_response, response, status_code)
+
+
+def assert_responses_match(actual: requests.Response, expected: Response, status_code):
+    assert all(header in actual.headers.items() for header in expected.headers.items())
 
     try:
-        actual_response_body = actual_response.json()
+        actual_body = actual.json()
     except requests.exceptions.JSONDecodeError:
-        actual_response_body = actual_response.text
+        actual_body = actual.text
 
-    assert (actual_response.status_code, actual_response_body) == (getattr(HTTPStatus, status_code), response.body), \
-        f'actual response: {actual_response.status_code, actual_response_body}'
+    assert (actual.status_code, actual_body) == (getattr(HTTPStatus, status_code), expected.body), \
+        f'actual response: {actual.status_code, actual_body}'
 
 
 def get_response(context, response_descriptor):
     response = get_test_data('RESPONSE', context, response_descriptor) if response_descriptor else ''
 
     return response if isinstance(response, Response) else Response(body=response)
+
+
+@then(u'service requests {request_descriptor}')
+def step_service_requests(context, request_descriptor):
+    request = get_request(context, request_descriptor)
+
+    if BEHAVE_RESTEST_SELF_TEST:
+        context.last_mock_response = do_async(context, request.send, context.mock_server.url_for(''))
+
+    context.mock_response_handler = context.mock_server.assert_request(
+        request.endpoint,
+        method=request.method,
+        headers=request.headers,
+        **get_arg_for_request_body(request),
+        timeout=9,
+    )
+
+
+@when(u'{status_code} is responded')
+@when(u'{status_code} with {response_descriptor} is responded')
+def step_impl(context, status_code, response_descriptor=None):
+    response = get_response(context, response_descriptor)
+
+    (
+        context.mock_response_handler.respond_with_data
+        if type(response.body) is str else
+        context.mock_response_handler.respond_with_json
+    )(
+        response.body, status=getattr(HTTPStatus, status_code), headers=response.headers
+    )
+
+    if BEHAVE_RESTEST_SELF_TEST:
+        assert_responses_match(context.last_mock_response.get(timeout=9), response, status_code)
+
+
+@then(u'service exchanges {request_descriptor}')
+def step_impl(context, request_descriptor):
+    step_service_requests(context, request_descriptor)
+
+    context.mock_response_handler.respond_with_data('', HTTPStatus.OK)
+
+    if BEHAVE_RESTEST_SELF_TEST:
+        assert_responses_match(context.last_mock_response.get(timeout=9), Response(), 'OK')
