@@ -3,7 +3,7 @@ from typing import Callable
 
 import requests
 
-JsonSerializable = dict[str, 'JsonSerializable'] | list['JsonSerializable'] | int | float | bool | None
+JsonSerializable = dict[str, 'JsonSerializable'] | list['JsonSerializable'] | int | float | bool | str | None
 
 
 class Request(requests.Request):
@@ -45,6 +45,32 @@ class Request(requests.Request):
             return session.send(prepared_request)
 
 
+class Response:
+    def __init__(
+        self,
+        headers: dict[str, str] | Callable[[], dict[str, str]] | None = None,
+        body: str | JsonSerializable | Callable[[], str | JsonSerializable] = '',
+    ):
+        self._headers = headers or {}
+        self._body = body
+
+    @property
+    def headers(self) -> dict[str, str]:
+        return self._headers() if callable(self._headers) else self._headers
+
+    @headers.setter
+    def headers(self, value: dict[str, str] | Callable[[], dict[str, str]]):
+        self._headers = value
+
+    @property
+    def body(self) -> str | JsonSerializable:
+        return self._body() if callable(self._body) else self._body
+
+    @body.setter
+    def body(self, value: str | JsonSerializable | Callable[[], str | JsonSerializable]):
+        self._body = value
+
+
 class ValueCapture:
     value: JsonSerializable = None
     _name: str
@@ -75,3 +101,11 @@ class ValueCapture:
         self.__class__.value = other
         logging.info(f'\n--------\n{self._name or f"value_capture_{id(self)}"}={other}\n--------\n')
         return True
+
+
+class UrlTemplate(str):
+    """
+    Before sending a request, its instances will be replaced
+    with the concatenation of a mock server base URL and the string value of the instance.
+    """
+    pass

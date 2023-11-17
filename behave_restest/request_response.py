@@ -1,4 +1,4 @@
-from helpers import Request
+from helpers import Response, Request
 
 MY_REQUEST_REQUEST = Request(
     endpoint='/my/path/',
@@ -9,8 +9,10 @@ MY_REQUEST_REQUEST = Request(
     },
 )
 
-MY_JSON_RESPONSE_RESPONSE = {
-    "responseField": "response-value",
-}
+MY_JSON_RESPONSE_RESPONSE = Response(
+    body={
+        "responseField": "response-value",
+    },
+)
 
 MY_TEXT_RESPONSE_RESPONSE = "response-text"
