@@ -3,7 +3,7 @@ from typing import Callable
 
 import requests
 
-JsonSerializable = dict[str, 'JsonSerializable'] | list['JsonSerializable'] | int | float | bool | None
+JsonSerializable = dict[str, 'JsonSerializable'] | list['JsonSerializable'] | int | float | bool | str | None
 
 
 class Request(requests.Request):
