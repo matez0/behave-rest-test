@@ -45,6 +45,32 @@ class Request(requests.Request):
             return session.send(prepared_request)
 
 
+class Response:
+    def __init__(
+        self,
+        headers: dict[str, str] | Callable[[], dict[str, str]] | None = None,
+        body: str | JsonSerializable | Callable[[], str | JsonSerializable] = '',
+    ):
+        self._headers = headers or {}
+        self._body = body
+
+    @property
+    def headers(self) -> dict[str, str]:
+        return self._headers() if callable(self._headers) else self._headers
+
+    @headers.setter
+    def headers(self, value: dict[str, str] | Callable[[], dict[str, str]]):
+        self._headers = value
+
+    @property
+    def body(self) -> str | JsonSerializable:
+        return self._body() if callable(self._body) else self._body
+
+    @body.setter
+    def body(self, value: str | JsonSerializable | Callable[[], str | JsonSerializable]):
+        self._body = value
+
+
 class ValueCapture:
     value: JsonSerializable = None
     _name: str
