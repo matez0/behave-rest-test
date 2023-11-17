@@ -101,3 +101,11 @@ class ValueCapture:
         self.__class__.value = other
         logging.info(f'\n--------\n{self._name or f"value_capture_{id(self)}"}={other}\n--------\n')
         return True
+
+
+class UrlTemplate(str):
+    """
+    Before sending a request, its instances will be replaced
+    with the concatenation of a mock server base URL and the string value of the instance.
+    """
+    pass

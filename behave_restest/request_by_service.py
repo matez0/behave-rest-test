@@ -1,4 +1,6 @@
-from helpers import Request
+from helpers import Request, UrlTemplate
+
+CALLBACK_URL = UrlTemplate('/callback/with/result/')
 
 MY_REQUEST_REQUEST = Request(
     endpoint='/my/path/',
@@ -6,6 +8,7 @@ MY_REQUEST_REQUEST = Request(
     json={
         "fieldOne": "value-one",
         "fieldTwo": "value-two",
+        "callbackUrl": CALLBACK_URL,
     },
 )
 
@@ -29,7 +32,7 @@ CREATE_ITEM_FROM_ANOTHER_SERVER_REQUEST = Request(
 )
 
 RESULTS_WITH_ANOTHER_SERVER_REQUEST = Request(
-    endpoint='/callback/with/result/',  # The mock server base URL has to be configured as a base URL for the server.
+    endpoint=CALLBACK_URL,  # The service shall use the callback URL specified in the initial request.
     method='POST',
     json={
         "result": "success",

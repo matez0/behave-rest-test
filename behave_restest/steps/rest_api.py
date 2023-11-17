@@ -11,7 +11,7 @@ from behave import given, then, when
 from pytest_httpserver import BlockingHTTPServer
 import requests
 
-from helpers import Response, ValueCapture
+from helpers import Response, UrlTemplate, ValueCapture
 
 BEHAVE_RESTEST_SELF_TEST = os.environ.get('BEHAVE_RESTEST_SELF_TEST', 'no') in ['on', 'yes', '1']
 
@@ -51,6 +51,8 @@ def stop_http_server(server):
 def step_impl(context, request_descriptor):
     request = get_request(context, request_descriptor)
 
+    replace_url_templates(context.mock_server, request.json)
+
     context.last_response = do_async(context, request.send, context.base_url)
 
     if BEHAVE_RESTEST_SELF_TEST:
@@ -70,6 +72,15 @@ def get_test_data(suffix, context, descriptor):
     return deepcopy(
         getattr(import_module(Path(context.feature.filename).stem), '_'.join(descriptor.split() + [suffix]))
     )
+
+
+def replace_url_templates(server, data):
+    if isinstance(data, dict):
+        for key, value in data.items():
+            if isinstance(value, UrlTemplate):
+                data[key] = server.url_for(value)
+            else:
+                replace_url_templates(server, value)
 
 
 def do_async(context, method, *args):
