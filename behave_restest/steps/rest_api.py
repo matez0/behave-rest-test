@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 
 from behave import given, then, when
-from pytest_httpserver import HTTPServer
+from pytest_httpserver import BlockingHTTPServer
 import requests
 
 from helpers import ValueCapture
@@ -25,7 +25,7 @@ def step_impl(context):
 
 
 def create_http_server(context):
-    server = HTTPServer(host='localhost')
+    server = BlockingHTTPServer(host='localhost', timeout=9)
     server.start()
     context.add_cleanup(stop_http_server, server)
     return server
@@ -48,15 +48,15 @@ def step_impl(context, request_descriptor):
     pool = ThreadPool(1)
     context.add_cleanup(clean_request_pool, pool)
 
+    context.last_response = pool.apply_async(request.send, (context.base_url,))
+
     if BEHAVE_RESTEST_SELF_TEST:
-        context.fake_response_handler = context.fake_service.expect_request(
+        context.fake_response_handler = context.fake_service.assert_request(
             request.endpoint,
             method=request.method,
             headers=request.headers,
             **get_arg_for_request_body(request),
         )
-
-    context.last_response = pool.apply_async(request.send, (context.base_url,))
 
 
 def get_request(context, request_descriptor):
