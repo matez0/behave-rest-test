@@ -1,4 +1,4 @@
-from helpers import Response, Request
+from helpers import Request, Response
 
 MY_REQUEST_REQUEST = Request(
     endpoint='/my/path/',
