@@ -5,7 +5,7 @@ import jwt
 from requests import PreparedRequest
 from requests.auth import AuthBase
 
-from helpers import Request
+from helpers import Request, Response, ValueCapture
 
 
 class Auth(AuthBase):
@@ -41,4 +41,43 @@ MY_REQUEST_WITH_AUTH_REQUEST = Request(
         "fieldTwo": "value-two",
     },
     auth=Auth()
+)
+
+MY_LOGIN_REQUEST = Request(
+    endpoint='/my/login/',
+    method='POST',
+    json={
+        "username": "my-username",
+        "password": "my-password",
+    },
+)
+
+COOKIE_RESPONSE = Response(
+    headers={
+        "Set-Cookie": ValueCapture.create('cookie')
+    }
+)
+
+
+class HeadersWithCookieAuth:
+    def __call__(self) -> dict[str, str]:
+        set_cookie = COOKIE_RESPONSE.headers['Set-Cookie']
+        assert isinstance(set_cookie, ValueCapture)
+
+        headers = {}
+
+        if isinstance(set_cookie.value, str):
+            headers["Cookie"] = set_cookie.value.split(';')[0].strip()
+
+        return headers
+
+
+MY_REQUEST_WITH_COOKIE_AUTH_REQUEST = Request(
+    endpoint='/profile/settings/',
+    method='POST',
+    headers=HeadersWithCookieAuth(),
+    json={
+        "email": "nobody@nowhere.none",
+        "notifications": "off",
+    },
 )

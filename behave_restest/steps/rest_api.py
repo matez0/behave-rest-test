@@ -119,7 +119,12 @@ def step_impl(context, status_code, response_descriptor=None):
             replace_value_capture_with_random_value(response.body),
         )
 
-        respond(fake_response, status=getattr(HTTPStatus, status_code), headers=response.headers)
+        response_headers = {
+            key: 'TSESSIONID=abc123 ; Path=/test/; HttpOnly' if key == 'Set-Cookie' else value
+            for key, value in response.headers.items()
+        }
+
+        respond(fake_response, status=getattr(HTTPStatus, status_code), headers=response_headers)
 
     actual_response = context.last_response.get(timeout=9)
 

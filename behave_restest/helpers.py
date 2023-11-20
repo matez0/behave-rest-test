@@ -45,32 +45,6 @@ class Request(requests.Request):
             return session.send(prepared_request)
 
 
-class Response:
-    def __init__(
-        self,
-        headers: dict[str, str] | Callable[[], dict[str, str]] | None = None,
-        body: str | JsonSerializable | Callable[[], str | JsonSerializable] = '',
-    ):
-        self._headers = headers or {}
-        self._body = body
-
-    @property
-    def headers(self) -> dict[str, str]:
-        return self._headers() if callable(self._headers) else self._headers
-
-    @headers.setter
-    def headers(self, value: dict[str, str] | Callable[[], dict[str, str]]):
-        self._headers = value
-
-    @property
-    def body(self) -> str | JsonSerializable:
-        return self._body() if callable(self._body) else self._body
-
-    @body.setter
-    def body(self, value: str | JsonSerializable | Callable[[], str | JsonSerializable]):
-        self._body = value
-
-
 class ValueCapture:
     value: JsonSerializable = None
     _name: str
@@ -101,6 +75,34 @@ class ValueCapture:
         self.__class__.value = other
         logging.info(f'\n--------\n{self._name or f"value_capture_{id(self)}"}={other}\n--------\n')
         return True
+
+
+class Response:
+    HeadersType = dict[str, str | ValueCapture]
+
+    def __init__(
+        self,
+        headers: HeadersType | Callable[[], HeadersType] | None = None,
+        body: str | JsonSerializable | Callable[[], str | JsonSerializable] = '',
+    ):
+        self._headers = headers or {}
+        self._body = body
+
+    @property
+    def headers(self) -> HeadersType:
+        return self._headers() if callable(self._headers) else self._headers
+
+    @headers.setter
+    def headers(self, value: HeadersType | Callable[[], HeadersType]):
+        self._headers = value
+
+    @property
+    def body(self) -> str | JsonSerializable:
+        return self._body() if callable(self._body) else self._body
+
+    @body.setter
+    def body(self, value: str | JsonSerializable | Callable[[], str | JsonSerializable]):
+        self._body = value
 
 
 class UrlTemplate(str):
